@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кинематический анализ зубчато-рычажного механизма</title>
+    <style>
+        body {
+            margin: 0;
+            background: #0a0e17;
+            color: #e0e6ed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #0f1724, #1e293b);
+            border-bottom: 2px solid #334155;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #fbbf24;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        #container {
+            position: relative;
+            margin: 20px auto;
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+        }
+        canvas {
+            display: block;
+            cursor: crosshair;
+            background: #0b1120;
+        }
+        #controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            min-width: 220px;
+            backdrop-filter: blur(4px);
+        }
+        .control-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .value {
+            font-family: 'Courier New', monospace;
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            background: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+        button.active {
+            background: #dc2626;
+        }
+        .legend {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #334155;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Зубчато-рычажный механизм</h1>
+        <div class="subtitle">Схема №1 • Вариант 1 • Интерактивный кинематический анализ</div>
+    </header>
+    
+    <div id="container">
+        <canvas id="mechCanvas" width="1000" height="600"></canvas>
+        <div id="controls">
+            <div class="control-group">
+                <label>Угол кривошипа φ</label>
+                <div class="value" id="phiVal">60.0°</div>
+            </div>
+            <div class="control-group">
+                <label>Скорость точки B</label>
+                <div class="value" id="vB">1.05 м/с</div>
+            </div>
+            <div class="control-group">
+                <label>Положение D (x)</label>
+                <div class="value" id="dxVal">-- мм</div>
+            </div>
+            <button id="animBtn" onclick="toggleAnimation()">▶ Анимация</button>
+            <button onclick="resetPosition()">↺ Сброс (φ=60°)</button>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="color-box" style="background:#fbbf24"></div>
+                    <span>Кривошип AB</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background:#3b82f6"></div>
+                    <span>Шатун BCK</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background:#10b981"></div>
+                    <span>Коромысло EC</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background:#f472b6"></div>
+                    <span>Ползун D</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mechCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Масштаб: 2.5 пикселя = 1 мм
+        const S = 2.5;
+        const MM = 1/S; // обратный масштаб
+        
+        // Исходные данные (мм)
+        const DATA = {
+            AB: 25,
+            BC: 120,
+            BD: 150,
+            BK: 100,
+            KD: 100,
+            EC: 100,
+            OE: 50,
+            OA: 70, // расстояние между центрами шестерен
+            m: 3,   // модуль
+            Z1: 16, // малая шестерня (ведущая)
+            Z2: 20, // большая шестерня (ведомая)
+            n1: 500 // об/мин
+        };
+        
+        // Радиусы шестерен (мм)
+        const R1 = DATA.m * DATA.Z1 / 2; // 24 мм
+        const R2 = DATA.m * DATA.Z2 / 2; // 30 мм
+        
+        // Положение неподвижных точек (пиксели)
+        // Центр координат - левый нижний угол с отступом
+        const OFFSET_X = 150;
+        const OFFSET_Y = 450;
+        
+        // Точка A (центр большой шестерни и кривошипа)
+        const A = {
+            x: OFFSET_X + 100,
+            y: OFFSET_Y - 150
+        };
+        
+        // Точка G (центр малой шестерни)
+        // Располагаем ниже A на расстоянии R1+R2 = 54 мм (центральное расстояние)
+        const G = {
+            x: A.x,
+            y: A.y + (R1 + R2) * S
+        };
+        
+        // Точка E (основание коромысла)
+        const E = {
+            x: A.x + 260, // подобрано для красоты
+            y: OFFSET_Y - 20
+        };
+        
+        // Угловая скорость (рад/с)
+        const omega1 = DATA.n1 * Math.PI / 30; // 52.36 рад/с
+        const omega2 = omega1 * DATA.Z1 / DATA.Z2; // 41.89 рад/с (противоположное направление)
+        
+        // Состояние механизма
+        let state = {
+            phi: 60 * Math.PI / 180, // начальный угол (60°)
+            D: { x: 0, y: 0 },
+            B: { x: 0, y: 0 },
+            C: { x: 0, y: 0 },
+            K: { x: 0, y: 0 },
+            animating: false,
+            time: 0
+        };
+        
+        // Поиск пересечения двух окружностей
+        function circleIntersection(c1, r1, c2, r2) {
+            const dx = c2.x - c1.x;
+            const dy = c2.y - c1.y;
+            const d = Math.sqrt(dx*dx + dy*dy);
+            
+            // Нет пересечения
+            if (d > r1 + r2 || d < Math.abs(r1 - r2) || d === 0) return null;
+            
+            const a = (r1*r1 - r2*r2 + d*d) / (2*d);
+            const h = Math.sqrt(r1*r1 - a*a);
+            
+            const xm = c1.x + a * dx / d;
+            const ym = c1.y + a * dy / d;
+            
+            const xs1 = xm + h * dy / d;
+            const xs2 = xm - h * dy / d;
+            const ys1 = ym - h * dx / d;
+            const ys2 = ym + h * dx / d;
+            
+            return [{x: xs1, y: ys1}, {x: xs2, y: ys2}];
+        }
+        
+        // Решение прямой кинематики (от угла phi к положению D)
+        function forwardKinematics(phi) {
+            // Точка B (конец кривошипа)
+            const B = {
+                x: A.x + DATA.AB * S * Math.cos(phi),
+                y: A.y + DATA.AB * S * Math.sin(phi)
+            };
+            
+            // Точка C (пересечение окружностей B(BC) и E(EC))
+            const cInt = circleIntersection(B, DATA.BC * S, E, DATA.EC * S);
+            if (!cInt) return null;
+            
+            // Выбираем решение, где C правее B (по изображению)
+            const C = (cInt[0].x > cInt[1].x) ? cInt[0] : cInt[1];
+            
+            // Точка K (вершина треугольника BDK)
+            // BK = 100, KD = 100, BD = 150
+            const kInt = circleIntersection(B, DATA.BK * S, {x:0,y:0}, DATA.BD * S); // временно
+            // Но нам нужна точка D сначала...
+            
+            // Сначала найдем D как точку на шатуне
+            // Вектор BC
+            const psi = Math.atan2(C.y - B.y, C.x - B.x);
+            
+            // D находится в системе координат шатуна
+            // Расстояние BD = 150, угол между BC и BD определим из геометрии
+            // Из треугольника BDK: BK=100, KD=100, BD=150
+            // Угол KBD = acos((100^2 + 150^2 - 100^2)/(2*100*150)) = acos(150/200) = acos(0.75) ≈ 41.4°
+            // Но нам нужен угол между BC и BD.
+            // Пока приближенно: из изображения видно, что D правее и ниже C.
+            // Вычислим D как точку, находящуюся на расстоянии 150 от B 
+            // и так, чтобы потом K было выше.
+            
+            // Пусть D находится под углом psi + delta относительно горизонтали
+            // delta можно найти из условия, что K (пересечение окружностей радиуса 100 от B и D)
+            // находится "выше" линии BD.
+            
+            // Для простоты: D находится на расстоянии 150 от B в направлении, 
+            // примерно совпадающем с BC, но чуть ниже.
+            // Точное положение: D в системе координат шатуна (B=(0,0), C=(120,0))
+            // D = (129.9, 75) мм (примерно, из расчета треугольника)
+            // Это соответствует углу atan2(75, 129.9) ≈ 30° ниже оси BC
+            
+            const angle_BD_body = 0.5236; // 30° вниз от BC
+            const D = {
+                x: B.x + DATA.BD * S * Math.cos(psi + angle_BD_body),
+                y: B.y + DATA.BD * S * Math.sin(psi + angle_BD_body)
+            };
+            
+            // Теперь K (пересечение окружностей от B и D радиусом 100)
+            const kPoints = circleIntersection(B, DATA.BK * S, D, DATA.KD * S);
+            if (!kPoints) return null;
+            
+            // Выбираем точку выше линии BD
+            const midBD = {x: (B.x+D.x)/2, y: (B.y+D.y)/2};
+            const K = (kPoints[0].y < midBD.y) ? kPoints[0] : kPoints[1];
+            
+            return {B, C, D, K, psi};
+        }
+        
+        // Обратная кинематика (от D.x к phi)
+        function inverseKinematics(Dx) {
+            const D = {x: Dx, y: state.D.y || (E.y - 50)}; // y ползуна фиксирован
+            
+            // Найти B: пересечение окружности A(AB) и D(BD)
+            const bPoints = circleIntersection(A, DATA.AB * S, D, DATA.BD * S);
+            if (!bPoints) return null;
+            
+            // Выбираем B выше (меньший y в canvas)
+            const B = (bPoints[0].y < bPoints[1].y) ? bPoints[0] : bPoints[1];
+            
+            // Найти C: пересечение окружности B(BC) и E(EC)
+            const cPoints = circleIntersection(B, DATA.BC * S, E, DATA.EC * S);
+            if (!cPoints) return null;
+            
+            // Выбираем C правее
+            const C = (cPoints[0].x > cPoints[1].x) ? cPoints[0] : cPoints[1];
+            
+            // Найти K
+            const kPoints = circleIntersection(B, DATA.BK * S, D, DATA.KD * S);
+            if (!kPoints) return null;
+            const midBD = {x: (B.x+D.x)/2, y: (B.y+D.y)/2};
+            const K = (kPoints[0].y < midBD.y) ? kPoints[0] : kPoints[1];
+            
+            // Вычислить phi
+            const phi = Math.atan2(B.y - A.y, B.x - A.x);
+            
+            return {B, C, D, K, phi};
+        }
+        
+        // Инициализация начального положения
+        function init() {
+            // Найдем y ползуна при phi=60°
+            const ref = forwardKinematics(state.phi);
+            if (ref) {
+                state.D.y = ref.D.y;
+                state.B = ref.B;
+                state.C = ref.C;
+                state.K = ref.K;
+                state.D.x = ref.D.x;
+            }
+        }
+        
+        // Отрисовка шестерни с зубьями
+        function drawGear(x, y, r, teeth, angle, color, label) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            // Основной круг
+            ctx.beginPath();
+            ctx.arc(0, 0, r * S, 0, Math.PI * 2);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Зубья (упрощенно - трапеции)
+            const toothAngle = (Math.PI * 2) / teeth;
+            const toothWidth = toothAngle * 0.4;
+            const addendum = 1.0 * DATA.m * S; // высота головки зуба
+            const dedendum = 1.25 * DATA.m * S; // высота ножки зуба
+            
+            for (let i = 0; i < teeth; i++) {
+                const a = i * toothAngle;
+                ctx.save();
+                ctx.rotate(a);
+                
+                ctx.beginPath();
+                // Основание зуба
+                ctx.moveTo((r*S - dedendum) * Math.cos(-toothWidth/2), (r*S - dedendum) * Math.sin(-toothWidth/2));
+                ctx.lineTo((r*S - dedendum) * Math.cos(toothWidth/2), (r*S - dedendum) * Math.sin(toothWidth/2));
+                // Вершина зуба
+                ctx.lineTo((r*S + addendum) * Math.cos(toothWidth/2 * 0.8), (r*S + addendum) * Math.sin(toothWidth/2 * 0.8));
+                ctx.lineTo((r*S + addendum) * Math.cos(-toothWidth/2 * 0.8), (r*S + addendum) * Math.sin(-toothWidth/2 * 0.8));
+                ctx.closePath();
+                
+                ctx.fillStyle = '#334155';
+                ctx.fill();
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+            
+            // Ступица
+            ctx.beginPath();
+            ctx.arc(0, 0, r * S * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = '#0f172a';
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Метка направления
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(r * S * 0.8, 0);
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // Подпись
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(label, x - 15, y + r*S + 20);
+        }
+        
+        // Отрисовка звеньев
+        function drawLink(p1, p2, color, width = 6) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            
+            // Блик
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        function drawTriangle(p1, p2, p3, color) {
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.closePath();
+            ctx.fillStyle = color + '33'; // 20% прозрачность
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+        
+        function drawJoint(x, y, r = 6, color = '#fbbf24') {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Блик
+            ctx.beginPath();
+            ctx.arc(x-2, y-2, 2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fill();
+        }
+        
+        function drawSlider(x, y) {
+            // Направляющая
+            ctx.beginPath();
+            ctx.moveTo(E.x + 100, y);
+            ctx.lineTo(E.x + 400, y);
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([10, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Ползун (прямоугольник)
+            ctx.fillStyle = '#f472b6';
+            ctx.fillRect(x - 15, y - 12, 30, 24);
+            ctx.strokeStyle = '#ec4899';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 15, y - 12, 30, 24);
+            
+            // Точка D
+            drawJoint(x, y, 5, '#f472b6');
+            
+            // Сила F
+            ctx.beginPath();
+            ctx.moveTo(x + 20, y);
+            ctx.lineTo(x + 60, y);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 55, y - 5);
+            ctx.lineTo(x + 60, y);
+            ctx.lineTo(x + 55, y + 5);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('F', x + 45, y - 10);
+        }
+        
+        // Основная функция отрисовки
+        function draw() {
+            // Очистка
+            ctx.fillStyle = '#0b1120';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Сетка
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+            
+            // Неподвижные опоры (штриховка)
+            ctx.fillStyle = '#334155';
+            // Опора A
+            ctx.fillRect(A.x - 20, A.y - 5, 40, 10);
+            ctx.beginPath(); ctx.moveTo(A.x - 20, A.y + 5); ctx.lineTo(A.x + 20, A.y + 5); ctx.stroke();
+            // Опора G
+            ctx.fillRect(G.x - 20, G.y - 5, 40, 10);
+            // Опора E
+            ctx.beginPath();
+            ctx.moveTo(E.x, E.y);
+            ctx.lineTo(E.x - 15, E.y + 20);
+            ctx.lineTo(E.x + 15, E.y + 20);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Углы поворота шестерен
+            // phi - угол кривошипа (относительно горизонтали)
+            // Большая шестерня (A) вращается вместе с кривошипом
+            const gear2Angle = state.phi;
+            // Малая шестерня (G) вращается в противоположную сторону с передаточным отношением
+            const gearRatio = DATA.Z2 / DATA.Z1; // 1.25
+            const gear1Angle = -gear2Angle * gearRatio;
+            
+            // Шестерни (сначала, чтобы были на заднем плане)
+            drawGear(G.x, G.y, R1, DATA.Z1, gear1Angle, '#3b82f6', `z₁=${DATA.Z1}`);
+            drawGear(A.x, A.y, R2, DATA.Z2, gear2Angle, '#60a5fa', `z₂=${DATA.Z2}`);
+            
+            // Линия центров шестерен
+            ctx.beginPath();
+            ctx.moveTo(A.x, A.y + R2*S);
+            ctx.lineTo(G.x, G.y - R1*S);
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Коромысло EC (звено 4)
+            drawLink(E, state.C, '#10b981', 8);
+            
+            // Шатун BCK (звено 3) - треугольник
+            drawTriangle(state.B, state.C, state.K, '#3b82f6');
+            drawLink(state.B, state.D, '#3b82f6', 6); // BD
+            drawLink(state.C, state.D, '#3b82f6', 4); // CD (для визуализации)
+            
+            // Кривошип AB (звено 2)
+            drawLink(A, state.B, '#fbbf24', 8);
+            
+            // Ползун D
+            drawSlider(state.D.x, state.D.y);
+            
+            // Точки и обозначения
+            drawJoint(A.x, A.y, 8, '#fbbf24'); // A
+            drawJoint(state.B.x, state.B.y, 6, '#fbbf24'); // B
+            drawJoint(state.C.x, state.C.y, 6, '#10b981'); // C
+            drawJoint(E.x, E.y, 8, '#10b981'); // E
+            drawJoint(state.K.x, state.K.y, 5, '#3b82f6'); // K
+            
+            // Подписи точек
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('A', A.x - 20, A.y - 10);
+            ctx.fillText('B', state.B.x - 15, state.B.y - 15);
+            ctx.fillText('C', state.C.x + 10, state.C.y - 10);
+            ctx.fillText('D', state.D.x, state.D.y + 30);
+            ctx.fillText('E', E.x - 20, E.y + 10);
+            ctx.fillText('K', state.K.x, state.K.y - 15);
+            ctx.fillText('G', G.x - 25, G.y + 5);
+            
+            // Угол phi
+            ctx.beginPath();
+            ctx.arc(A.x, A.y, 40, 0, state.phi);
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([2, 2]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(`φ=${(state.phi * 180/Math.PI).toFixed(0)}°`, A.x + 50, A.y + 10);
+            
+            // Обновление UI
+            updateUI();
+        }
+        
+        function updateUI() {
+            document.getElementById('phiVal').textContent = (state.phi * 180/Math.PI).toFixed(1) + '°';
+            document.getElementById('dxVal').textContent = ((state.D.x - A.x) * MM).toFixed(0) + ' мм';
+            
+            // Скорость точки B (м/с)
+            // v_B = omega2 * AB (м/с)
+            const vB = (omega2 * DATA.AB / 1000).toFixed(2);
+            document.getElementById('vB').textContent = vB + ' м/с';
+        }
+        
+        // Анимация
+        function animate() {
+            if (!state.animating) return;
+            
+            state.time += 0.05;
+            state.phi = (state.time) % (Math.PI * 2);
+            
+            // Прямая кинематика для анимации
+            const res = forwardKinematics(state.phi);
+            if (res) {
+                state.B = res.B;
+                state.C = res.C;
+                state.D = res.D;
+                state.K = res.K;
+            }
+            
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        function toggleAnimation() {
+            state.animating = !state.animating;
+            const btn = document.getElementById('animBtn');
+            if (state.animating) {
+                btn.textContent = '⏸ Пауза';
+                btn.classList.add('active');
+                animate();
+            } else {
+                btn.textContent = '▶ Анимация';
+                btn.classList.remove('active');
+            }
+        }
+        
+        function resetPosition() {
+            state.animating = false;
+            document.getElementById('animBtn').textContent = '▶ Анимация';
+            document.getElementById('animBtn').classList.remove('active');
+            state.phi = 60 * Math.PI / 180;
+            const res = forwardKinematics(state.phi);
+            if (res) {
+                state.B = res.B;
+                state.C = res.C;
+                state.D = res.D;
+                state.K = res.K;
+            }
+            draw();
+        }
+        
+        // Управление мышью (drag ползуна D)
+        let isDragging = false;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Проверка, попали ли в D
+            const dx = x - state.D.x;
+            const dy = y - state.D.y;
+            if (Math.sqrt(dx*dx + dy*dy) < 30) {
+                isDragging = true;
+                state.animating = false;
+                document.getElementById('animBtn').textContent = '▶ Анимация';
+                document.getElementById('animBtn').classList.remove('active');
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) {
+                // Курсор над D
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const dx = x - state.D.x;
+                const dy = y - state.D.y;
+                canvas.style.cursor = Math.sqrt(dx*dx + dy*dy) < 30 ? 'grab' : 'crosshair';
+                return;
+            }
+            
+            canvas.style.cursor = 'grabbing';
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            
+            // Ограничение движения D
+            const minX = E.x + 100;
+            const maxX = E.x + 350;
+            const clampedX = Math.max(minX, Math.min(maxX, x));
+            
+            const res = inverseKinematics(clampedX);
+            if (res) {
+                state.phi = res.phi;
+                state.B = res.B;
+                state.C = res.C;
+                state.D.x = clampedX;
+                state.K = res.K;
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvas.style.cursor = 'crosshair';
+        });
+        
+        // Инициализация
+        init();
+        draw();
+        
+        // Обработка изменения размера окна
+        window.addEventListener('resize', () => {
+            draw();
+        });
+    </script>
+</body>
+</html>
