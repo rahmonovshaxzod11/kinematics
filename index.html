@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uz">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Механизм: зубчато-рычажный с треугольником BKD (Схема №1)</title>
+    <title>Zubchato-richagli mexanizm | Sxema №1 | Variant 1</title>
     <style>
         * {
-            user-select: none; /* better drag feel, no text selection on canvas */
+            user-select: none;
         }
         body {
             margin: 0;
             background: #0a0f1a;
             color: #eef2ff;
-            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -22,27 +22,25 @@
         }
         header {
             width: 100%;
-            padding: 12px 0;
+            padding: 10px 0;
             background: linear-gradient(135deg, #0f172a, #111827);
             border-bottom: 1px solid #2d3a5e;
             text-align: center;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             z-index: 10;
         }
         h1 {
             margin: 0;
-            font-size: 1.35rem;
-            letter-spacing: 1.5px;
-            font-weight: 600;
+            font-size: 1.25rem;
+            letter-spacing: 1px;
             background: linear-gradient(135deg, #facc15, #fbbf24);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
         .sub {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #7e8aa2;
-            margin-top: 4px;
+            margin-top: 3px;
         }
         .canvas-wrapper {
             position: relative;
@@ -55,7 +53,7 @@
         canvas {
             display: block;
             margin: 0 auto;
-            border-radius: 24px;
+            border-radius: 20px;
             box-shadow: 0 20px 35px -12px black;
             border: 1px solid #253450;
             cursor: crosshair;
@@ -63,12 +61,12 @@
         }
         #controls {
             position: absolute;
-            bottom: 24px;
-            right: 24px;
-            background: rgba(15, 23, 42, 0.85);
+            bottom: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(12px);
             border-radius: 20px;
-            padding: 16px 20px;
+            padding: 14px 18px;
             border: 1px solid #334155;
             min-width: 240px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
@@ -76,19 +74,18 @@
             z-index: 20;
         }
         .ctrl-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         .ctrl-group label {
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 500;
             color: #9ca3af;
-            letter-spacing: 0.5px;
         }
         .value {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #facc15;
         }
@@ -96,135 +93,155 @@
             width: 100%;
             background: #2c3e66;
             border: none;
-            padding: 8px 0;
+            padding: 7px 0;
             margin-top: 8px;
             border-radius: 40px;
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: white;
             cursor: pointer;
             transition: 0.2s;
-            box-shadow: 0 1px 2px black;
         }
         button:hover {
             background: #3b4e7a;
             transform: scale(0.98);
         }
-        .active-btn {
-            background: #b91c1c;
-        }
         .legend {
-            margin-top: 14px;
-            padding-top: 10px;
+            margin-top: 12px;
+            padding-top: 8px;
             border-top: 1px solid #334155;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
         }
         .legend span {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-right: 12px;
+            gap: 6px;
+            margin-right: 10px;
         }
         .color-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 10px;
+            width: 9px;
+            height: 9px;
+            border-radius: 9px;
             display: inline-block;
         }
-        @media (max-width: 800px) {
-            #controls { transform: scale(0.9); right: 8px; bottom: 8px; padding: 10px 14px; min-width: 180px; }
-            .value { font-size: 1rem; }
+        .params-table {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 0.6rem;
+            font-family: monospace;
+            border: 1px solid #334155;
+            pointer-events: none;
+            z-index: 20;
+            color: #cbd5e1;
         }
-        footer {
-            font-size: 10px;
-            color: #475569;
-            text-align: center;
-            padding: 6px;
-            background: #030712aa;
-            width: 100%;
+        .params-table table {
+            border-collapse: collapse;
+        }
+        .params-table td {
+            padding: 2px 6px;
+        }
+        .params-table td:first-child {
+            color: #94a3b8;
+        }
+        .params-table td:last-child {
+            color: #facc15;
+            font-weight: bold;
+        }
+        @media (max-width: 800px) {
+            #controls { transform: scale(0.85); right: 5px; bottom: 5px; padding: 8px 12px; min-width: 180px; }
+            .params-table { font-size: 0.5rem; top: 5px; left: 5px; padding: 4px 8px; }
+            .value { font-size: 0.9rem; }
         }
     </style>
 </head>
 <body>
 <header>
-    <h1>⚙️ ЗУБЧАТО-РЫЧАЖНЫЙ МЕХАНИЗМ | СХЕМА №1</h1>
-    <div class="sub">Треугольник BKD • точка C между B и D • ползун D • интерактивный анализ</div>
+    <h1>⚙️ ZUBCHATO-RICHAGLI MEXANIZM | SXEMA №1 | VARIANT 1</h1>
+    <div class="sub">BKD uchburchak • C nuqta B va D orasida (bir to'g'ri chiziq) • ES = ½ EC</div>
 </header>
 <div class="canvas-wrapper">
     <canvas id="mechCanvas" width="1100" height="620"></canvas>
     <div id="controls">
         <div class="ctrl-group">
-            <label>🔄 Угол кривошипа φ <span style="color:#facc15;" id="phiDeg">60.0°</span></label>
-            <div class="value" id="phiRadVal">1.047 рад</div>
+            <label>🔄 Krivoship burchagi φ <span style="color:#facc15;" id="phiDeg">60.0°</span></label>
+            <div class="value" id="phiRadVal">1.047 rad</div>
         </div>
         <div class="ctrl-group">
-            <label>⚡ Скорость точки B <span style="color:#facc15;" id="vBval">1.05</span> м/с</label>
+            <label>⚡ B nuqta tezligi <span style="color:#facc15;" id="vBval">--</span> m/s</label>
         </div>
         <div class="ctrl-group">
-            <label>📏 Координата D (x) <span id="dxCoord">---</span> мм</label>
+            <label>📏 D nuqta koordinatasi (x) <span id="dxCoord">---</span> mm</label>
         </div>
-        <button id="animateBtn">▶ АНИМАЦИЯ</button>
-        <button id="resetBtn">⟳ СБРОС (φ=60°)</button>
+        <button id="animateBtn">▶ ANIMATSIYA</button>
+        <button id="resetBtn">⟳ QAYTARISH (φ=60°)</button>
         <div class="legend">
-            <span><div class="color-dot" style="background:#facc15;"></div> Кривошип AB</span>
-            <span><div class="color-dot" style="background:#3b82f6;"></div> Шатун BC & звенья</span>
-            <span><div class="color-dot" style="background:#10b981;"></div> Коромысло EC</span>
-            <span><div class="color-dot" style="background:#ec489a;"></div> Ползун D / треугольник BKD</span>
-            <span><div class="color-dot" style="background:#a855f7;"></div> Точка K (вершина)</span>
+            <span><div class="color-dot" style="background:#facc15;"></div> Krivoship AB</span>
+            <span><div class="color-dot" style="background:#3b82f6;"></div> Shatun B-C-D (bir chiziq)</span>
+            <span><div class="color-dot" style="background:#10b981;"></div> Koromislo EC</span>
+            <span><div class="color-dot" style="background:#ec489a;"></div> Polzun D / BKD uchburchak</span>
+            <span><div class="color-dot" style="background:#a855f7;"></div> K nuqta</span>
         </div>
-        <div class="legend" style="font-size:0.65rem; text-align:center;">✧ C расположена между B и D на звене BCK ✧</div>
+    </div>
+    <div class="params-table">
+        <table>
+            <tr><td>n₁:</td><td>500 ob/min</td><td>OE:</td><td>50 mm</td></tr>
+            <tr><td>OA:</td><td>70 mm</td><td>AB:</td><td>25 mm</td></tr>
+            <tr><td>BC:</td><td>120 mm</td><td>BD:</td><td>150 mm</td></tr>
+            <tr><td>BK:</td><td>100 mm</td><td>KD:</td><td>100 mm</td></tr>
+            <tr><td>EC:</td><td>100 mm</td><td>m:</td><td>3</td></tr>
+            <tr><td>Z₁:</td><td>16</td><td>Z₂:</td><td>20</td></tr>
+            <tr><td>F:</td><td>600 N</td><td>ES = EC/2:</td><td>50 mm</td></tr>
+        </table>
     </div>
 </div>
-<footer>Перетащите ползун D мышью (drag & drop) | Зубчатая передача: z₁=16, z₂=20 | ω₁ = 500 об/мин</footer>
 
 <script>
     (function(){
-        // ---------- РАЗМЕРНОСТИ И МАСШТАБ ----------
         const canvas = document.getElementById('mechCanvas');
         const ctx = canvas.getContext('2d');
-        const S = 2.6;          // пикселей на мм
-        const MM = 1 / S;       // мм на пиксель
         
-        // ГЕОМЕТРИЧЕСКИЕ ДАННЫЕ (в мм)
+        const S = 2.45;
+        const MM = 1 / S;
+        
         const DATA = {
-            AB: 28,      // кривошип
-            BC: 118,     // расстояние от B до C (шатун)
-            BD: 156,     // от B до D (вдоль звена BCK)
-            BK: 102,     // сторона треугольника BKD
-            KD: 102,     // сторона треугольника K-D (равнобедренный)
-            EC: 104,     // коромысло
-            OE: 48,      // опора E смещение (для геометрии)
-            // шестерни
+            AB: 25,      
+            BC: 120,     
+            BD: 150,     
+            BK: 100,     
+            KD: 100,     
+            EC: 100,     
+            OE: 50,
+            OA: 70,
             m: 3,
             Z1: 16,
             Z2: 20,
-            n1: 500      // об/мин
+            n1: 500,
+            F: 600
         };
         
-        // Радиусы шестерен (мм)
-        const R1 = DATA.m * DATA.Z1 / 2;  // 24 мм
-        const R2 = DATA.m * DATA.Z2 / 2;  // 30 мм
+        const R1 = DATA.m * DATA.Z1 / 2;
+        const R2 = DATA.m * DATA.Z2 / 2;
+        const omega_crank = DATA.n1 * Math.PI / 30;
+        const omega_AB = omega_crank * DATA.Z1 / DATA.Z2;
         
-        // Угловая скорость кривошипа (рад/с)
-        const omega_crank = DATA.n1 * Math.PI / 30;    // 52.36 рад/с (ведущая малая шестерня? по условию n1=500, связь через передачу)
-        // Передаточное: ведущая малая шестерня (z1) связана с большой (z2) -> кривошип на большой?
-        // По чертежу: кривошип AB связан с большой шестерней (z2). Частота вращения кривошипа = n1 * (Z1/Z2)
-        const omega_AB = omega_crank * DATA.Z1 / DATA.Z2;   // 41.89 рад/с
-        
-        // Неподвижные точки в пикселях (опоры)
-        const OFFSET_X = 140;
+        const OFFSET_X = 130;
         const OFFSET_Y = 500;
         
-        // Центр большой шестерни (A) — начало кривошипа
-        const A = { x: OFFSET_X + 120, y: OFFSET_Y - 160 };
-        // Центр малой шестерни (G)
+        const A = { x: OFFSET_X + DATA.OA * S + 20, y: OFFSET_Y - 140 };
         const G = { x: A.x, y: A.y + (R1 + R2) * S };
-        // Точка E (качающаяся опора коромысла)
-        const E = { x: A.x + 270, y: OFFSET_Y - 35 };
         
-        // Состояние механизма
+        const E = { 
+            x: A.x + DATA.OE * S + 180, 
+            y: OFFSET_Y - 25 
+        };
+        
         let state = {
-            phi: 60 * Math.PI / 180,   // угол кривошипа от горизонтали
+            phi: 60 * Math.PI / 180,
             B: { x:0, y:0 },
             C: { x:0, y:0 },
             D: { x:0, y:0 },
@@ -233,12 +250,11 @@
             animTime: 0
         };
         
-        // ---------- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ: пересечение окружностей ----------
         function intersectCircles(c1, r1, c2, r2) {
             const dx = c2.x - c1.x;
             const dy = c2.y - c1.y;
             const d = Math.hypot(dx, dy);
-            if (d > r1 + r2 + 0.01 || d < Math.abs(r1 - r2) - 0.01 || d === 0) return null;
+            if (d > r1 + r2 + 0.1 || d < Math.abs(r1 - r2) - 0.1 || d === 0) return null;
             const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
             const h = Math.sqrt(Math.abs(r1 * r1 - a * a));
             const xm = c1.x + a * dx / d;
@@ -248,97 +264,73 @@
             return [{ x: xm + rx, y: ym + ry }, { x: xm - rx, y: ym - ry }];
         }
         
-        // ----- ПРЯМАЯ КИНЕМАТИКА: по углу φ определяем все точки -----
-        // ВАЖНО: точка C должна лежать на отрезке B-D? Нет, по условию: "C ni B va D orasida qoy" -> C между B и D на звене.
-        // Треугольник BKD: вершины B, K, D. С находится на отрезке между B и D. 
-        // По чертежу: C — это шарнир между шатуном и коромыслом EC. Соединяет B-C-D одной кинематической цепью.
-        // Реализуем: C — пересечение окружностей (B, BC) и (E, EC). Затем D откладываем на продолжении или внутри отрезка BC? 
-        // Однако в условии: "C ni B va D orasida" значит точка C находится на отрезке BD. Поэтому D выбирается на луче из B через C на расстоянии BD.
-        // Так мы и сделаем: сначала найдем C из пересечения (B, BC) и (E, EC). Потом D = B + (BD/BC) * (C - B). Тогда автоматически C между B и D.
-        // Треугольник BKD: BK = KD = 100, BD известно. Вычислим K через пересечение окружностей B(BK) и D(KD).
-        
         function solveKinematics(phi) {
-            // 1. Точка B (конец кривошипа)
             const B = {
                 x: A.x + DATA.AB * S * Math.cos(phi),
                 y: A.y + DATA.AB * S * Math.sin(phi)
             };
             
-            // 2. Точка C — пересечение окружностей B (радиус BC) и E (радиус EC)
             const bc_rad = DATA.BC * S;
             const ec_rad = DATA.EC * S;
             const intersections = intersectCircles(B, bc_rad, E, ec_rad);
             if (!intersections) return null;
-            // Выбираем C так, чтобы оно было "впереди" по направлению механизма (правее и чуть ниже)
-            let C = intersections[0];
-            if ((C.x < B.x && intersections[1].x > B.x) || (C.y > B.y && intersections[1].y < B.y)) C = intersections[1];
-            // дополнительная проверка: C должна быть между B и D в будущем, выберем решение с большей x для типичной схемы
-            if (C.x < B.x && intersections[1].x > B.x) C = intersections[1];
             
-            // 3. Точка D — лежит на луче BC, на расстоянии BD от B (C находится между B и D)
+            let C = intersections[0];
+            if (C.x < B.x && intersections[1].x > B.x) C = intersections[1];
+            if (C.y > B.y + 15 && intersections[1].y < B.y) C = intersections[1];
+            
             const vecBC = { x: C.x - B.x, y: C.y - B.y };
             const lenBC = Math.hypot(vecBC.x, vecBC.y);
-            if (lenBC < 1e-5) return null;
-            const ratio = DATA.BD / DATA.BC;   // BD > BC, поэтому D дальше от B за точкой C
+            if (lenBC < 0.1) return null;
+            
+            const ratio = DATA.BD / DATA.BC;
             const D = {
                 x: B.x + vecBC.x * ratio,
                 y: B.y + vecBC.y * ratio
             };
             
-            // 4. Треугольник BKD: BK = DATA.BK, KD = DATA.KD, BD известно.
             const bk_rad = DATA.BK * S;
             const kd_rad = DATA.KD * S;
             const kIntersections = intersectCircles(B, bk_rad, D, kd_rad);
             if (!kIntersections) return null;
-            // Выбираем точку K выше линии BD (для визуальной похожести)
-            const midBD = { x: (B.x + D.x)/2, y: (B.y + D.y)/2 };
+            
             let K = kIntersections[0];
-            // выше = меньший y (canvas y сверху вниз)
-            if ((kIntersections[0].y < midBD.y && kIntersections[1].y > midBD.y) ||
-                (Math.abs(kIntersections[0].y - midBD.y) > Math.abs(kIntersections[1].y - midBD.y) && kIntersections[0].y < midBD.y))
-                K = kIntersections[0];
-            else K = kIntersections[1];
+            const midY = (B.y + D.y) / 2;
+            if (Math.abs(kIntersections[0].y - midY) > Math.abs(kIntersections[1].y - midY)) {
+                K = kIntersections[0].y < kIntersections[1].y ? kIntersections[0] : kIntersections[1];
+            } else {
+                K = kIntersections[0].y < kIntersections[1].y ? kIntersections[0] : kIntersections[1];
+            }
             
             return { B, C, D, K, phi };
         }
         
-        // ----- ОБРАТНАЯ КИНЕМАТИКА (перетаскивание D) -----
-        function inverseFromDx(dxTarget, currentState) {
-            // D перемещается по горизонтальной направляющей (y = const)
-            // y ползуна фиксируем из предыдущего расчета (для постоянства уровня)
+        function inverseFromDx(dxTarget) {
             let Dy = state.D.y;
-            if (!Dy || isNaN(Dy)) Dy = E.y + 15;
+            if (!Dy || isNaN(Dy)) Dy = E.y + 10;
             const D = { x: dxTarget, y: Dy };
             
-            // Найти B из пересечения окружностей A(AB) и D(BD)
             const AB_rad = DATA.AB * S;
             const BD_rad = DATA.BD * S;
             const bIntersect = intersectCircles(A, AB_rad, D, BD_rad);
             if (!bIntersect) return null;
-            // выбираем точку B выше (меньший y) для корректного положения кривошипа
+            
             let B = (bIntersect[0].y < bIntersect[1].y) ? bIntersect[0] : bIntersect[1];
-            // угол phi
             const phi = Math.atan2(B.y - A.y, B.x - A.x);
             
-            // Найти C: пересечение окружностей B(BC) и E(EC)
             const bc_rad = DATA.BC * S;
             const ec_rad = DATA.EC * S;
             const cIntersect = intersectCircles(B, bc_rad, E, ec_rad);
             if (!cIntersect) return null;
-            let C = cIntersect[0];
-            // выбираем C, которая лежит между B и D по вектору
-            const vecBD = { x: D.x - B.x, y: D.y - B.y };
-            const lenBD = Math.hypot(vecBD.x, vecBD.y);
-            if (lenBD > 0.1) {
-                const dot1 = (C.x - B.x)*vecBD.x + (C.y - B.y)*vecBD.y;
-                const dot2 = (cIntersect[1].x - B.x)*vecBD.x + (cIntersect[1].y - B.y)*vecBD.y;
-                if (dot1 > dot2) C = cIntersect[0];
-                else C = cIntersect[1];
-                // дополнительно: C должна быть между B и D по расстоянию
-            }
-            // проверка: C не выходит за D по длине, но это гарантировано геометрией если BD > BC
             
-            // K (треугольник BKD)
+            let C = cIntersect[0];
+            const vecBD = { x: D.x - B.x, y: D.y - B.y };
+            if (Math.hypot(vecBD.x, vecBD.y) > 0.1) {
+                const dot1 = (C.x - B.x) * vecBD.x + (C.y - B.y) * vecBD.y;
+                const dot2 = (cIntersect[1].x - B.x) * vecBD.x + (cIntersect[1].y - B.y) * vecBD.y;
+                C = dot1 > dot2 ? cIntersect[0] : cIntersect[1];
+            }
+            
             const bk_rad = DATA.BK * S;
             const kd_rad = DATA.KD * S;
             const kInt = intersectCircles(B, bk_rad, D, kd_rad);
@@ -349,7 +341,6 @@
             return { B, C, D, K, phi };
         }
         
-        // Инициализация начального положения при phi=60°
         function initFromPhi() {
             const res = solveKinematics(state.phi);
             if (res) {
@@ -358,13 +349,9 @@
                 state.D = res.D;
                 state.K = res.K;
                 state.phi = res.phi;
-            } else {
-                // fallback
-                console.warn("kinematics error, using defaults");
             }
         }
         
-        // ---------- ОТРИСОВКА ШЕСТЕРЕН (стилизованные зубья) ----------
         function drawGear(x, y, r_mm, teeth, angleRad, color, label) {
             const r_px = r_mm * S;
             ctx.save();
@@ -375,23 +362,23 @@
             ctx.fillStyle = "#141e2e";
             ctx.fill();
             ctx.strokeStyle = color;
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2.2;
             ctx.stroke();
-            // простые зубья
+            
             const toothCount = teeth;
             const angleStep = (Math.PI * 2) / toothCount;
-            const toothHeight = 3.2;
+            const toothHeight = 3;
             for (let i = 0; i < toothCount; i++) {
                 const a1 = i * angleStep - angleStep * 0.3;
                 const a2 = i * angleStep + angleStep * 0.3;
-                const x1 = (r_px - 1.2) * Math.cos(a1);
-                const y1 = (r_px - 1.2) * Math.sin(a1);
+                const x1 = (r_px - 1) * Math.cos(a1);
+                const y1 = (r_px - 1) * Math.sin(a1);
                 const x2 = (r_px + toothHeight) * Math.cos(a1);
                 const y2 = (r_px + toothHeight) * Math.sin(a1);
                 const x3 = (r_px + toothHeight) * Math.cos(a2);
                 const y3 = (r_px + toothHeight) * Math.sin(a2);
-                const x4 = (r_px - 1.2) * Math.cos(a2);
-                const y4 = (r_px - 1.2) * Math.sin(a2);
+                const x4 = (r_px - 1) * Math.cos(a2);
+                const y4 = (r_px - 1) * Math.sin(a2);
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
@@ -404,17 +391,16 @@
                 ctx.stroke();
             }
             ctx.beginPath();
-            ctx.arc(0, 0, r_px * 0.35, 0, Math.PI*2);
+            ctx.arc(0, 0, r_px * 0.32, 0, Math.PI*2);
             ctx.fillStyle = "#0a0f1a";
             ctx.fill();
             ctx.fillStyle = color;
-            ctx.font = "bold 12px 'Segoe UI'";
-            ctx.shadowBlur = 0;
-            ctx.fillText(label, -12, -r_px-12);
+            ctx.font = "bold 11px 'Segoe UI'";
+            ctx.fillText(label, -12, -r_px-10);
             ctx.restore();
         }
         
-        function drawLink(p1, p2, color, width=6, dash=false) {
+        function drawLink(p1, p2, color, width=5, dash=false) {
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
@@ -434,11 +420,11 @@
             ctx.fillStyle = fillColor;
             ctx.fill();
             ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2.2;
             ctx.stroke();
         }
         
-        function drawJoint(x,y, r=6, color="#facc15") {
+        function drawJoint(x, y, r=5, color="#facc15") {
             ctx.beginPath();
             ctx.arc(x, y, r-1, 0, Math.PI*2);
             ctx.fillStyle = "#0f172a";
@@ -449,62 +435,61 @@
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.beginPath();
-            ctx.arc(x-1.5, y-1.5, 1.8, 0, Math.PI*2);
+            ctx.arc(x-1.2, y-1.2, 1.5, 0, Math.PI*2);
             ctx.fillStyle = "#fff6e0";
             ctx.fill();
         }
         
         function drawSlider(x, y) {
             ctx.beginPath();
-            ctx.moveTo(E.x + 80, y);
+            ctx.moveTo(E.x + 70, y);
             ctx.lineTo(E.x + 380, y);
             ctx.strokeStyle = "#5b6e8c";
             ctx.lineWidth = 3;
             ctx.setLineDash([8, 8]);
             ctx.stroke();
             ctx.setLineDash([]);
+            
             ctx.fillStyle = "#ec489a";
-            ctx.shadowBlur = 0;
-            ctx.fillRect(x-14, y-10, 28, 20);
+            ctx.fillRect(x-13, y-9, 26, 18);
             ctx.strokeStyle = "#f472b6";
-            ctx.lineWidth = 1.8;
-            ctx.strokeRect(x-14, y-10, 28, 20);
-            drawJoint(x, y, 5, "#f472b6");
-            // сила F
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x-13, y-9, 26, 18);
+            drawJoint(x, y, 4.5, "#f472b6");
+            
             ctx.beginPath();
-            ctx.moveTo(x+22, y);
-            ctx.lineTo(x+58, y);
+            ctx.moveTo(x+20, y);
+            ctx.lineTo(x+52, y);
             ctx.strokeStyle = "#f97316";
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2.2;
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(x+54, y-4);
-            ctx.lineTo(x+58, y);
-            ctx.lineTo(x+54, y+4);
+            ctx.moveTo(x+48, y-3.5);
+            ctx.lineTo(x+52, y);
+            ctx.lineTo(x+48, y+3.5);
             ctx.fillStyle = "#f97316";
             ctx.fill();
             ctx.fillStyle = "#fdba74";
-            ctx.font = "bold 12px monospace";
-            ctx.fillText("F", x+42, y-6);
+            ctx.font = "bold 11px monospace";
+            ctx.fillText("F", x+36, y-5);
         }
         
         function drawMechanism() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#0a0f1a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // сетка легкая
+            
             ctx.strokeStyle = "#1f2a44";
             ctx.lineWidth = 0.5;
             for(let i=0;i<canvas.width;i+=50){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
             for(let i=0;i<canvas.height;i+=50){ ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
             
-            // шестерни
-            const gearAngle_big = state.phi; // кривошип вращается с большой шестерней
-            const gearAngle_small = -gearAngle_big * (DATA.Z2 / DATA.Z1);
+            const gearAngle_big = state.phi;
+            const gearAngle_small = gearAngle_big * (DATA.Z2 / DATA.Z1);
+            
             drawGear(G.x, G.y, R1, DATA.Z1, gearAngle_small, "#3b82f6", `z₁=${DATA.Z1}`);
             drawGear(A.x, A.y, R2, DATA.Z2, gearAngle_big, "#60a5fa", `z₂=${DATA.Z2}`);
             
-            // линии центров
             ctx.beginPath();
             ctx.moveTo(A.x, A.y + R2*S);
             ctx.lineTo(G.x, G.y - R1*S);
@@ -513,138 +498,144 @@
             ctx.stroke();
             ctx.setLineDash([]);
             
-            // опоры
             ctx.fillStyle = "#334155";
-            ctx.fillRect(A.x-18, A.y-4, 36, 8);
-            ctx.fillRect(G.x-18, G.y-4, 36, 8);
+            ctx.fillRect(A.x-16, A.y-4, 32, 7);
+            ctx.fillRect(G.x-16, G.y-4, 32, 7);
             ctx.beginPath(); ctx.moveTo(E.x-12, E.y); ctx.lineTo(E.x, E.y-12); ctx.lineTo(E.x+12, E.y); ctx.fill();
             
-            // звенья: коромысло EC
-            drawLink(E, state.C, "#10b981", 8);
-            // треугольник BKD
-            drawTriangle(state.B, state.K, state.D, "rgba(59,130,246,0.18)", "#60a5fa");
-            // звено BD и CD показать как часть механизма
-            drawLink(state.B, state.D, "#3b82f6", 5);
-            drawLink(state.C, state.D, "#3b82f6", 3.5);
-            drawLink(state.B, state.C, "#3b82f6", 4);
-            // звено BK и KD (грани треугольника)
-            drawLink(state.B, state.K, "#a855f7", 3);
-            drawLink(state.K, state.D, "#a855f7", 3);
-            // кривошип AB
-            drawLink(A, state.B, "#facc15", 9);
+            drawLink(state.B, state.D, "#3b82f6", 5.5);
             
-            // ползун D
+            drawTriangle(state.B, state.K, state.D, "rgba(168,85,247,0.12)", "#a855f7");
+            drawLink(state.B, state.K, "#a855f7", 2.5);
+            drawLink(state.K, state.D, "#a855f7", 2.5);
+            
+            drawLink(E, state.C, "#10b981", 7);
+            drawLink(A, state.B, "#facc15", 8);
+            
             drawSlider(state.D.x, state.D.y);
             
-            // шарниры и подписи
-            drawJoint(A.x, A.y, 8, "#facc15");
-            drawJoint(state.B.x, state.B.y, 6, "#facc15");
-            drawJoint(state.C.x, state.C.y, 6, "#10b981");
-            drawJoint(E.x, E.y, 8, "#10b981");
-            drawJoint(state.K.x, state.K.y, 5, "#c084fc");
-            drawJoint(state.D.x, state.D.y, 6, "#f472b6");
+            drawJoint(A.x, A.y, 7, "#facc15");
+            drawJoint(state.B.x, state.B.y, 5.5, "#facc15");
+            drawJoint(state.C.x, state.C.y, 5.5, "#10b981");
+            drawJoint(E.x, E.y, 7, "#10b981");
+            drawJoint(state.K.x, state.K.y, 4.5, "#c084fc");
+            drawJoint(state.D.x, state.D.y, 5, "#f472b6");
             
-            ctx.font = "bold 15px 'Segoe UI'";
+            ctx.font = "bold 14px 'Segoe UI'";
             ctx.fillStyle = "#e2e8f0";
-            ctx.fillText("A", A.x-20, A.y-12);
-            ctx.fillText("B", state.B.x-15, state.B.y-12);
+            ctx.fillText("A", A.x-18, A.y-10);
+            ctx.fillText("B", state.B.x-13, state.B.y-12);
             ctx.fillText("C", state.C.x+8, state.C.y-8);
-            ctx.fillText("D", state.D.x+8, state.D.y-14);
-            ctx.fillText("E", E.x-18, E.y+6);
+            ctx.fillText("D", state.D.x+8, state.D.y-12);
+            ctx.fillText("E", E.x-16, E.y+8);
             ctx.fillText("K", state.K.x, state.K.y-12);
-            ctx.fillText("G", G.x-24, G.y-5);
+            ctx.fillText("G", G.x-22, G.y-4);
             
-            // угол φ
             ctx.beginPath();
-            ctx.arc(A.x, A.y, 42, 0, state.phi);
+            ctx.arc(A.x, A.y, 38, 0, state.phi);
             ctx.strokeStyle = "#facc15";
             ctx.lineWidth = 2;
             ctx.setLineDash([3,5]);
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.fillStyle = "#facc15";
-            ctx.font = "bold 12px monospace";
-            ctx.fillText(`φ = ${(state.phi*180/Math.PI).toFixed(1)}°`, A.x+40, A.y-8);
+            ctx.font = "bold 11px monospace";
+            ctx.fillText(`φ = ${(state.phi*180/Math.PI).toFixed(1)}°`, A.x+38, A.y-6);
             
-            // скорость
-            const vB_ms = (omega_AB * DATA.AB / 1000).toFixed(2);
+            const vB_ms = (omega_AB * DATA.AB / 1000).toFixed(3);
             document.getElementById('vBval').innerHTML = vB_ms;
             document.getElementById('phiDeg').innerHTML = (state.phi*180/Math.PI).toFixed(1)+"°";
-            document.getElementById('phiRadVal').innerHTML = state.phi.toFixed(3)+" рад";
+            document.getElementById('phiRadVal').innerHTML = state.phi.toFixed(3)+" rad";
             const dx_mm = ((state.D.x - A.x) * MM).toFixed(1);
-            document.getElementById('dxCoord').innerHTML = dx_mm + " мм";
+            document.getElementById('dxCoord').innerHTML = dx_mm + " mm";
         }
         
-        // АНИМАЦИЯ
         let animFrame;
         function animateLoop() {
             if(!state.animating) return;
-            state.animTime += 0.025;
+            state.animTime += 0.022;
             state.phi = state.animTime % (Math.PI*2);
             const newKin = solveKinematics(state.phi);
             if(newKin){
-                state.B = newKin.B; state.C = newKin.C; state.D = newKin.D; state.K = newKin.K;
+                state.B = newKin.B;
+                state.C = newKin.C;
+                state.D = newKin.D;
+                state.K = newKin.K;
             }
             drawMechanism();
             animFrame = requestAnimationFrame(animateLoop);
         }
+        
         function toggleAnim(){
             state.animating = !state.animating;
             const btn = document.getElementById('animateBtn');
             if(state.animating){
-                btn.innerHTML = "⏸ ПАУЗА";
+                btn.innerHTML = "⏸ PAUZA";
                 btn.style.background = "#9b2c2c";
                 if(animFrame) cancelAnimationFrame(animFrame);
                 animateLoop();
             } else {
-                btn.innerHTML = "▶ АНИМАЦИЯ";
+                btn.innerHTML = "▶ ANIMATSIYA";
                 btn.style.background = "#2c3e66";
                 if(animFrame) cancelAnimationFrame(animFrame);
                 drawMechanism();
             }
         }
+        
         function resetPos(){
             state.animating = false;
-            document.getElementById('animateBtn').innerHTML = "▶ АНИМАЦИЯ";
+            document.getElementById('animateBtn').innerHTML = "▶ ANIMATSIYA";
             document.getElementById('animateBtn').style.background = "#2c3e66";
             if(animFrame) cancelAnimationFrame(animFrame);
             state.phi = 60 * Math.PI/180;
             state.animTime = state.phi;
             const res = solveKinematics(state.phi);
-            if(res){ state.B=res.B; state.C=res.C; state.D=res.D; state.K=res.K; }
+            if(res){
+                state.B = res.B;
+                state.C = res.C;
+                state.D = res.D;
+                state.K = res.K;
+            }
             drawMechanism();
         }
         
-        // DRAG D
         let dragActive = false;
         function onMouseDown(e){
             const rect = canvas.getBoundingClientRect();
-            const mx = (e.clientX - rect.left) * (canvas.width/rect.width);
-            const my = (e.clientY - rect.top) * (canvas.height/rect.height);
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const my = (e.clientY - rect.top) * scaleY;
             const dx = mx - state.D.x;
             const dy = my - state.D.y;
-            if(Math.hypot(dx,dy) < 25){
+            if(Math.hypot(dx, dy) < 28){
                 dragActive = true;
                 state.animating = false;
                 if(animFrame) cancelAnimationFrame(animFrame);
-                document.getElementById('animateBtn').innerHTML = "▶ АНИМАЦИЯ";
+                document.getElementById('animateBtn').innerHTML = "▶ ANIMATSIYA";
                 document.getElementById('animateBtn').style.background = "#2c3e66";
                 canvas.style.cursor = "grabbing";
                 e.preventDefault();
             }
         }
+        
         function onMouseMove(e){
             if(!dragActive) return;
             const rect = canvas.getBoundingClientRect();
-            let mouseX = (e.clientX - rect.left) * (canvas.width/rect.width);
-            mouseX = Math.min(Math.max(mouseX, E.x+60), E.x+360);
-            const inv = inverseFromDx(mouseX, state);
+            const scaleX = canvas.width / rect.width;
+            let mouseX = (e.clientX - rect.left) * scaleX;
+            mouseX = Math.min(Math.max(mouseX, E.x+50), E.x+380);
+            const inv = inverseFromDx(mouseX);
             if(inv){
-                state.B = inv.B; state.C = inv.C; state.D = inv.D; state.K = inv.K;
+                state.B = inv.B;
+                state.C = inv.C;
+                state.D = inv.D;
+                state.K = inv.K;
                 state.phi = inv.phi;
                 drawMechanism();
             }
         }
+        
         function onMouseUp(){
             dragActive = false;
             canvas.style.cursor = "crosshair";
