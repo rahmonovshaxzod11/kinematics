@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Zubchato-richagli mexanizm | Tishli g‘ildiraklar teskari aylanish</title>
+    <title>Zubchato-richagli mexanizm | Sxema №1 | Variant 1</title>
     <style>
         * {
             user-select: none;
@@ -163,7 +163,6 @@
 <header>
     <h1>⚙️ ZUBCHATO-RICHAGLI MEXANIZM | SXEMA №1 | VARIANT 1</h1>
     <div class="sub">BKD uchburchak • C nuqta B va D orasida (bir to'g'ri chiziq) • ES = ½ EC</div>
-    <div class="sub" style="color:#facc15;">✦ Kichik g'ildirak (z₂=20) soat bo‘ylab | Katta g'ildirak (z₁=16) soatga qarshi ✦</div>
 </header>
 <div class="canvas-wrapper">
     <canvas id="mechCanvas" width="1100" height="620"></canvas>
@@ -186,8 +185,6 @@
             <span><div class="color-dot" style="background:#10b981;"></div> Koromislo EC</span>
             <span><div class="color-dot" style="background:#ec489a;"></div> Polzun D / BKD uchburchak</span>
             <span><div class="color-dot" style="background:#a855f7;"></div> K nuqta</span>
-            <span><div class="color-dot" style="background:#facc15;"></div> ⭯ Kichik g'ildirak: soat bo‘ylab</span>
-            <span><div class="color-dot" style="background:#3b82f6;"></div> ⭮ Katta g'ildirak: soatga qarshi</span>
         </div>
     </div>
     <div class="params-table">
@@ -208,10 +205,9 @@
         const canvas = document.getElementById('mechCanvas');
         const ctx = canvas.getContext('2d');
         
-        const S = 2.45;          // масштаб: 1 mm = 2.45 px
+        const S = 2.45;
         const MM = 1 / S;
         
-        // Геометрия механизма
         const DATA = {
             AB: 25,      
             BC: 120,     
@@ -228,46 +224,31 @@
             F: 600
         };
         
-        // Радиусы делительных окружностей
-        const R1 = DATA.m * DATA.Z1 / 2;   // радиус большого колеса (Z1)
-        const R2 = DATA.m * DATA.Z2 / 2;   // радиус малого колеса (Z2)
+        const R1 = DATA.m * DATA.Z1 / 2;
+        const R2 = DATA.m * DATA.Z2 / 2;
+        const omega_crank = DATA.n1 * Math.PI / 30;
+        const omega_AB = omega_crank * DATA.Z1 / DATA.Z2;
         
-        // Угловая скорость входного вала (кривошипа AB) – она же для малой шестерни z2
-        // но согласно кинематике: n1=500 об/мин – это частота вращения входного вала.
-        // В исходном коде omega_crank = n1*pi/30 – это частота малой шестерни z2.
-        // Направление: по часовой стрелке -> отрицательная угловая скорость для рисования,
-        // но для кинематики кривошипа знак направления задаётся отдельно.
-        const omega_small_cw = - (DATA.n1 * Math.PI / 30);   // отрицательная = по часовой стрелке
-        // Большое колесо (z1) вращается в противоположную сторону: + (против часовой)
-        const omega_large_ccw = + (DATA.n1 * Math.PI / 30) * (DATA.Z2 / DATA.Z1);   // модуль тот же, знак +
-        
-        // Смещения для красивого расположения на canvas
         const OFFSET_X = 130;
         const OFFSET_Y = 500;
         
-        // Точка A (центр малой шестерни и кривошипа)
         const A = { x: OFFSET_X + DATA.OA * S + 20, y: OFFSET_Y - 140 };
-        // Точка G (центр большой шестерни)
         const G = { x: A.x, y: A.y + (R1 + R2) * S };
-        // Точка E (опора коромысла)
+        
         const E = { 
             x: A.x + DATA.OE * S + 180, 
             y: OFFSET_Y - 25 
         };
         
-        // Состояние механизма
         let state = {
-            phi: 60 * Math.PI / 180,   // начальный угол кривошипа (относительно горизонтали)
+            phi: 60 * Math.PI / 180,
             B: { x:0, y:0 },
             C: { x:0, y:0 },
             D: { x:0, y:0 },
             K: { x:0, y:0 },
-            animating: false,
-            animTime: 0,
-            lastTimestamp: 0
+            animating: false
         };
         
-        // Функция поиска пересечения двух окружностей
         function intersectCircles(c1, r1, c2, r2) {
             const dx = c2.x - c1.x;
             const dy = c2.y - c1.y;
@@ -282,40 +263,36 @@
             return [{ x: xm + rx, y: ym + ry }, { x: xm - rx, y: ym - ry }];
         }
         
-        // Прямая кинематика по углу phi (кривошип AB)
         function solveKinematics(phi) {
-            // Точка B на конце кривошипа
             const B = {
                 x: A.x + DATA.AB * S * Math.cos(phi),
                 y: A.y + DATA.AB * S * Math.sin(phi)
             };
             
-            // Находим точку C (пересечение окружностей (B, BC) и (E, EC))
             const bc_rad = DATA.BC * S;
             const ec_rad = DATA.EC * S;
             const intersections = intersectCircles(B, bc_rad, E, ec_rad);
             if (!intersections) return null;
             
-            // Выбираем подходящую точку C (чтобы C лежала ближе к направлению B->D)
             let C = intersections[0];
             if (C.x < B.x && intersections[1].x > B.x) C = intersections[1];
             if (C.y > B.y + 15 && intersections[1].y < B.y) C = intersections[1];
             
-            // D лежит на луче B->C с коэффициентом BD/BC
             const vecBC = { x: C.x - B.x, y: C.y - B.y };
             const lenBC = Math.hypot(vecBC.x, vecBC.y);
             if (lenBC < 0.1) return null;
+            
             const ratio = DATA.BD / DATA.BC;
             const D = {
                 x: B.x + vecBC.x * ratio,
                 y: B.y + vecBC.y * ratio
             };
             
-            // Точка K из треугольника BKD (BK, KD известны)
             const bk_rad = DATA.BK * S;
             const kd_rad = DATA.KD * S;
             const kIntersections = intersectCircles(B, bk_rad, D, kd_rad);
             if (!kIntersections) return null;
+            
             let K = kIntersections[0];
             const midY = (B.y + D.y) / 2;
             if (Math.abs(kIntersections[0].y - midY) > Math.abs(kIntersections[1].y - midY)) {
@@ -323,10 +300,10 @@
             } else {
                 K = kIntersections[0].y < kIntersections[1].y ? kIntersections[0] : kIntersections[1];
             }
+            
             return { B, C, D, K, phi };
         }
         
-        // Обратная кинематика (по положению ползуна D)
         function inverseFromDx(dxTarget) {
             let Dy = state.D.y;
             if (!Dy || isNaN(Dy)) Dy = E.y + 10;
@@ -338,7 +315,9 @@
             if (!bIntersect) return null;
             
             let B = (bIntersect[0].y < bIntersect[1].y) ? bIntersect[0] : bIntersect[1];
-            const phi = Math.atan2(B.y - A.y, B.x - A.x);
+            
+            let phi = Math.atan2(B.y - A.y, B.x - A.x);
+            if(phi < 0) phi += Math.PI * 2;
             
             const bc_rad = DATA.BC * S;
             const ec_rad = DATA.EC * S;
@@ -363,7 +342,6 @@
             return { B, C, D, K, phi };
         }
         
-        // Инициализация по углу phi
         function initFromPhi() {
             const res = solveKinematics(state.phi);
             if (res) {
@@ -375,13 +353,11 @@
             }
         }
         
-        // Рисование зубчатого колеса с заданным направлением вращения (стрелка)
-        function drawGear(x, y, r_mm, teeth, angleRad, color, label, rotationDirection) {
+        function drawGear(x, y, r_mm, teeth, angleRad, color, label) {
             const r_px = r_mm * S;
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(angleRad);
-            // Основной круг
             ctx.beginPath();
             ctx.arc(0, 0, r_px, 0, Math.PI * 2);
             ctx.fillStyle = "#141e2e";
@@ -390,10 +366,9 @@
             ctx.lineWidth = 2.2;
             ctx.stroke();
             
-            // Зубья
             const toothCount = teeth;
             const angleStep = (Math.PI * 2) / toothCount;
-            const toothHeight = 4;
+            const toothHeight = 3;
             for (let i = 0; i < toothCount; i++) {
                 const a1 = i * angleStep - angleStep * 0.3;
                 const a2 = i * angleStep + angleStep * 0.3;
@@ -416,38 +391,13 @@
                 ctx.lineWidth = 1;
                 ctx.stroke();
             }
-            // Центральное отверстие
             ctx.beginPath();
             ctx.arc(0, 0, r_px * 0.32, 0, Math.PI*2);
             ctx.fillStyle = "#0a0f1a";
             ctx.fill();
-            // Подпись
             ctx.fillStyle = color;
             ctx.font = "bold 11px 'Segoe UI'";
             ctx.fillText(label, -12, -r_px-10);
-            
-            // Стрелка направления вращения (вокруг центра)
-            ctx.beginPath();
-            const arrowRadius = r_px * 0.75;
-            const dirAngle = (rotationDirection === 'cw') ? -Math.PI/2 : Math.PI/2;
-            const arrowStart = { x: arrowRadius * Math.cos(dirAngle - 0.5), y: arrowRadius * Math.sin(dirAngle - 0.5) };
-            const arrowEnd = { x: arrowRadius * Math.cos(dirAngle + 0.5), y: arrowRadius * Math.sin(dirAngle + 0.5) };
-            ctx.beginPath();
-            ctx.moveTo(arrowStart.x, arrowStart.y);
-            ctx.lineTo(arrowEnd.x, arrowEnd.y);
-            ctx.strokeStyle = "#facc15";
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            // Треугольная стрелка
-            const tipAngle = dirAngle;
-            const tipX = (arrowRadius + 8) * Math.cos(tipAngle);
-            const tipY = (arrowRadius + 8) * Math.sin(tipAngle);
-            ctx.beginPath();
-            ctx.moveTo(tipX, tipY);
-            ctx.lineTo(tipX - 6 * Math.cos(tipAngle - 0.8), tipY - 6 * Math.sin(tipAngle - 0.8));
-            ctx.lineTo(tipX - 6 * Math.cos(tipAngle + 0.8), tipY - 6 * Math.sin(tipAngle + 0.8));
-            ctx.fillStyle = "#facc15";
-            ctx.fill();
             ctx.restore();
         }
         
@@ -530,26 +480,18 @@
             ctx.fillStyle = "#0a0f1a";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Сетка
             ctx.strokeStyle = "#1f2a44";
             ctx.lineWidth = 0.5;
             for(let i=0;i<canvas.width;i+=50){ ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
             for(let i=0;i<canvas.height;i+=50){ ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
             
-            // Углы поворота зубчатых колёс:
-            // phi_small – угол поворота малого колеса (кривошипа AB) – вращается ПО ЧАСОВОЙ стрелке => отрицательное направление для анимации
-            // Для отображения зубьев: угол = state.phi * (Z2/Z1?) но чтобы визуально согласовать зацепление, используем базовый угол.
-            // Чтобы направление вращения было очевидно, передаём параметр направления.
-            // Угол большого колеса должен быть противоположным малому: phi_large = - state.phi * (Z2/Z1)
-            const phi_small_display = state.phi;
-            const phi_large_display = - state.phi * (DATA.Z2 / DATA.Z1);
+            const gearAngle_big = state.phi;
+            const offset = Math.PI / DATA.Z1;
+            const gearAngle_small = -gearAngle_big * (DATA.Z2 / DATA.Z1) + offset;
             
-            // Рисуем большую шестерню (Z1) – вращается ПРОТИВ ЧАСОВОЙ (ccw)
-            drawGear(G.x, G.y, R1, DATA.Z1, phi_large_display, "#3b82f6", `z₁=${DATA.Z1}`, 'ccw');
-            // Рисуем малую шестерню (Z2) – вращается ПО ЧАСОВОЙ (cw)
-            drawGear(A.x, A.y, R2, DATA.Z2, phi_small_display, "#60a5fa", `z₂=${DATA.Z2}`, 'cw');
+            drawGear(G.x, G.y, R1, DATA.Z1, gearAngle_small, "#3b82f6", `z₁=${DATA.Z1}`);
+            drawGear(A.x, A.y, R2, DATA.Z2, gearAngle_big, "#60a5fa", `z₂=${DATA.Z2}`);
             
-            // Линия центров
             ctx.beginPath();
             ctx.moveTo(A.x, A.y + R2*S);
             ctx.lineTo(G.x, G.y - R1*S);
@@ -558,22 +500,22 @@
             ctx.stroke();
             ctx.setLineDash([]);
             
-            // Крепления
             ctx.fillStyle = "#334155";
             ctx.fillRect(A.x-16, A.y-4, 32, 7);
             ctx.fillRect(G.x-16, G.y-4, 32, 7);
             ctx.beginPath(); ctx.moveTo(E.x-12, E.y); ctx.lineTo(E.x, E.y-12); ctx.lineTo(E.x+12, E.y); ctx.fill();
             
-            // Основные звенья
             drawLink(state.B, state.D, "#3b82f6", 5.5);
+            
             drawTriangle(state.B, state.K, state.D, "rgba(168,85,247,0.12)", "#a855f7");
             drawLink(state.B, state.K, "#a855f7", 2.5);
             drawLink(state.K, state.D, "#a855f7", 2.5);
+            
             drawLink(E, state.C, "#10b981", 7);
             drawLink(A, state.B, "#facc15", 8);
+            
             drawSlider(state.D.x, state.D.y);
             
-            // Шарниры
             drawJoint(A.x, A.y, 7, "#facc15");
             drawJoint(state.B.x, state.B.y, 5.5, "#facc15");
             drawJoint(state.C.x, state.C.y, 5.5, "#10b981");
@@ -581,7 +523,6 @@
             drawJoint(state.K.x, state.K.y, 4.5, "#c084fc");
             drawJoint(state.D.x, state.D.y, 5, "#f472b6");
             
-            // Подписи
             ctx.font = "bold 14px 'Segoe UI'";
             ctx.fillStyle = "#e2e8f0";
             ctx.fillText("A", A.x-18, A.y-10);
@@ -592,7 +533,6 @@
             ctx.fillText("K", state.K.x, state.K.y-12);
             ctx.fillText("G", G.x-22, G.y-4);
             
-            // Угол phi
             ctx.beginPath();
             ctx.arc(A.x, A.y, 38, 0, state.phi);
             ctx.strokeStyle = "#facc15";
@@ -604,9 +544,7 @@
             ctx.font = "bold 11px monospace";
             ctx.fillText(`φ = ${(state.phi*180/Math.PI).toFixed(1)}°`, A.x+38, A.y-6);
             
-            // Вычисление скорости B
-            const omega_AB_rad_s = DATA.n1 * Math.PI / 30;  // модуль скорости кривошипа (1/с)
-            const vB_ms = (omega_AB_rad_s * DATA.AB / 1000).toFixed(3);
+            const vB_ms = (omega_AB * DATA.AB / 1000).toFixed(3);
             document.getElementById('vBval').innerHTML = vB_ms;
             document.getElementById('phiDeg').innerHTML = (state.phi*180/Math.PI).toFixed(1)+"°";
             document.getElementById('phiRadVal').innerHTML = state.phi.toFixed(3)+" rad";
@@ -617,13 +555,7 @@
         let animFrame;
         function animateLoop() {
             if(!state.animating) return;
-            // Увеличиваем угол кривошипа (по часовой стрелке) => уменьшаем phi (отрицательное приращение)
-            // Но чтобы анимация выглядела естественно (кривошип вращается по часовой), deltaPhi = -omega_small_cw * dt
-            // omega_small_cw отрицательна, -omega_small_cw положительна.
-            const deltaPhi = -omega_small_cw * 0.022;
-            state.phi += deltaPhi;
-            // Нормализация
-            state.phi = state.phi % (Math.PI * 2);
+            state.phi -= 0.022;
             if(state.phi < 0) state.phi += Math.PI * 2;
             
             const newKin = solveKinematics(state.phi);
@@ -658,7 +590,7 @@
             document.getElementById('animateBtn').innerHTML = "▶ ANIMATSIYA";
             document.getElementById('animateBtn').style.background = "#2c3e66";
             if(animFrame) cancelAnimationFrame(animFrame);
-            state.phi = 60 * Math.PI / 180;
+            state.phi = 60 * Math.PI/180;
             const res = solveKinematics(state.phi);
             if(res){
                 state.B = res.B;
